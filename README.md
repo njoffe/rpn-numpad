@@ -15,16 +15,80 @@ While RPN mode is on, a small calculator window stays on top of other windows. I
 
 The window never takes focus, so you can keep working in the app underneath. Press f then Enter to type the result into that app.
 
-## Install and run
+## Build it yourself
 
-You need Windows 10 or 11. Nothing needs to be installed, because the app is built with the C# compiler that ships with Windows.
+No ready-made `.exe` is offered. You build it from the source code in about a minute.
+That way you can see exactly what you're running: the whole app is one readable file, [`RpnNumpad.cs`](RpnNumpad.cs).
 
-1. Download this repository (green **Code** button → **Download ZIP**), and unzip it.
-2. Double-click **`build.cmd`**. It creates `RpnNumpad.exe` next to it.
-3. Double-click **`RpnNumpad.exe`**. A tray icon appears.
-4. Press **Ctrl + Alt + Numpad Enter** to turn RPN mode on or off.
+**You need:** Windows 10 or 11 and a keyboard with a numeric keypad. You don't need Visual Studio, the .NET SDK or anything else.
+The build uses the C# compiler that's already part of Windows (`csc.exe` from .NET Framework 4.x).
+
+### Step 1: Download the source
+
+Choose one:
+
+* **No git:** on this page, click the green **Code** button → **Download ZIP**.
+  Right-click the downloaded ZIP → **Extract All…** and pick a folder you'll keep, such as `Documents\rpn-numpad`.
+  > Tip: if Windows marks downloaded files as unsafe, right-click the ZIP → **Properties** → tick **Unblock** → **OK** *before* extracting.
+* **With git:**
+  ```
+  git clone https://github.com/njoffe/rpn-numpad.git
+  ```
+
+### Step 2: Build
+
+Open the folder and double-click **`build.cmd`**. A window flashes by and `RpnNumpad.exe` appears in the same folder.
+
+To watch the build, or if nothing seems to happen, run it from a terminal instead:
+
+```
+cd path\to\rpn-numpad
+build.cmd
+```
+
+When it works, the terminal shows:
+
+```
+Built "C:\...\rpn-numpad\RpnNumpad.exe"
+```
+
+<details>
+<summary>What build.cmd does (the manual command)</summary>
+
+```
+%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe /nologo /target:winexe /optimize+ /codepage:65001 ^
+  /out:RpnNumpad.exe /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll RpnNumpad.cs
+```
+
+On 32-bit Windows the compiler is in `Framework` instead of `Framework64`.
+</details>
+
+### Step 3: Run
+
+1. Double-click **`RpnNumpad.exe`**. A tray icon (an "R") appears near the clock, along with a short pop-up message.
+   If you don't see the icon, click the **^** arrow in the taskbar to show hidden icons.
+2. Press **Ctrl + Alt + Numpad Enter** to turn RPN mode on. The calculator window appears.
+3. Press the same keys again to turn it off.
 
 To have it start automatically, right-click the tray icon and choose **Start with Windows**.
+If you move the folder later, turn that option off and on again so it points to the new location.
+
+To quit, right-click the tray icon → **Exit**.
+
+### Troubleshooting the build
+
+| Problem | Fix |
+|---|---|
+| `The system cannot find the path specified` / compiler not found | .NET Framework 4.x is missing. It comes with every copy of Windows 10/11. On an unusual or stripped-down install, get the **.NET Framework 4.8 Runtime** from Microsoft's website. |
+| `Build FAILED` with error lines | Make sure `RpnNumpad.cs` is in the same folder as `build.cmd` and wasn't edited. Download a fresh copy if needed. |
+| `Access to the path ... is denied` | The app is still running. Exit it from the tray icon, then build again. Or the folder is read-only, so move it somewhere under `Documents`. |
+| Antivirus deletes or quarantines the exe | The app uses a keyboard hook to capture numpad keys, which some antivirus programs flag on unknown programs. The source is all in `RpnNumpad.cs` for you to inspect. If you're comfortable with it, add the folder as an exclusion. |
+| "Windows protected your PC" (SmartScreen) | Click **More info** → **Run anyway**. This happens with any unsigned program. |
+| *"An Application Control policy has blocked this file"* | Smart App Control is on. See [If Windows blocks the exe](#if-windows-blocks-the-exe) below. |
+
+### Updating
+
+Download the new source (or `git pull`), exit the running app from the tray, and run `build.cmd` again.
 
 ### If Windows blocks the exe
 
