@@ -386,6 +386,13 @@ namespace RpnNumpad
             miEnable = new ToolStripMenuItem("RPN mode on\tCtrl+Alt+Num Enter", null, delegate { Toggle(); });
             miStartup = new ToolStripMenuItem("Start with Windows", null, delegate { ToggleStartup(); });
             miStartup.Checked = IsStartupEnabled();
+            if (string.IsNullOrEmpty(System.Reflection.Assembly.GetExecutingAssembly().Location))
+            {
+                // Loaded into PowerShell from memory (Smart App Control workaround): there is no exe path
+                // to register, so auto-start must be done with a Startup-folder shortcut instead.
+                miStartup.Enabled = false;
+                miStartup.Text = "Start with Windows (use a Startup shortcut)";
+            }
             var menu = new ContextMenuStrip();
             menu.Items.Add(miEnable);
             menu.Items.Add("Key map…", null, delegate { ShowKeyMap(); });
@@ -705,11 +712,12 @@ namespace RpnNumpad
             catch (Exception) { }
         }
 
-        void SaveState()
+        // Called on toggle-off, Exit, Windows shutdown/restart/sign-out and sleep.
+        // X already holds the value of a number being typed, so no need to end entry here.
+        public void SaveState()
         {
             try
             {
-                Calc.Finish();
                 using (RegistryKey k = Registry.CurrentUser.CreateSubKey(RegKey))
                 {
                     k.SetValue("Stack", Calc.Serialize());
@@ -834,6 +842,17 @@ namespace RpnNumpad
         {
             base.OnLocationChanged(e);
             if (!positioning && Visible) { AnchorLeft = Left; AnchorBottom = Bottom; }
+        }
+
+        // This window exists (hidden) for the app's whole life, so it receives the shutdown and
+        // power broadcasts that Windows sends to top-level windows. Save before they take effect.
+        protected override void WndProc(ref Message m)
+        {
+            const int WM_QUERYENDSESSION = 0x11, WM_ENDSESSION = 0x16, WM_POWERBROADCAST = 0x218, PBT_APMSUSPEND = 4;
+            if (m.Msg == WM_QUERYENDSESSION || (m.Msg == WM_ENDSESSION && m.WParam != IntPtr.Zero) ||
+                (m.Msg == WM_POWERBROADCAST && m.WParam == (IntPtr)PBT_APMSUSPEND))
+                app.SaveState();
+            base.WndProc(ref m);
         }
 
         protected override void OnMouseDown(MouseEventArgs e)

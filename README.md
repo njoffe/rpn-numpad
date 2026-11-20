@@ -103,7 +103,17 @@ unsigned programs that you build yourself. Your options:
    powershell.exe -NoProfile -STA -Command "[Reflection.Assembly]::Load([IO.File]::ReadAllBytes('C:\path\to\RpnNumpad.exe')).EntryPoint.Invoke(`$null, @())"
    ```
    Use `powershell.exe` (Windows PowerShell 5.1), not `pwsh`. Option 3 works around a security setting, so whether to use it is up to you.
-   With this option, the tray's *Start with Windows* setting won't work.
+   With this option the tray's *Start with Windows* setting is greyed out. To start the app automatically at sign-in,
+   run this once in PowerShell (change the path to where your `RpnNumpad.exe` is). It adds a shortcut to your Startup folder:
+   ```powershell
+   $exe = 'C:\path\to\RpnNumpad.exe'
+   $s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Startup'))\RPN Numpad.lnk")
+   $s.TargetPath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe"
+   $s.Arguments = "-NoProfile -STA -WindowStyle Hidden -Command `"[Reflection.Assembly]::Load([IO.File]::ReadAllBytes('$exe')).EntryPoint.Invoke(`$null, @())`""
+   $s.WindowStyle = 7
+   $s.Save()
+   ```
+   To stop it starting automatically, delete *RPN Numpad* from the Startup folder (press Win + R and type `shell:startup`).
 
 ## Enable / disable
 
@@ -186,6 +196,7 @@ Blue **g** functions (press NumLock twice, then the key). The header shows wheth
 * Works with NumLock on or off. In RPN mode NumLock is captured, so its light doesn't change.
 * Invalid operations (÷0, √ of a negative, tan 90°, …) show a red message and leave the stack unchanged.
 * The stack, the angle mode and the window position are saved between sessions (in `HKCU\Software\RpnNumpad`).
+  They're saved when you turn RPN mode off, exit, sleep, shut down or restart, so nothing is lost if Windows restarts for an update.
 * Drag the window to move it. Right-click it or the tray icon for *Key map*, *Start with Windows* and *Exit*.
 
 ## How it works
